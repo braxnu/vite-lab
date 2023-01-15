@@ -21,9 +21,9 @@ if (!jwtSecret) {
 
 const client_id = process.env.GOOGLE_AUTH_CLIENT_ID
 
-if (!client_id) {
-  throw new Error('Missing env GOOGLE_AUTH_CLIENT_ID')
-}
+// if (!client_id) {
+//   throw new Error('Missing env GOOGLE_AUTH_CLIENT_ID')
+// }
 
 let allowedUsers: User[] = []
 
@@ -65,8 +65,13 @@ setInterval(() => {
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+const assetsAbsolutePath = path.join(
+  __dirname,
+  process.env.ASSETS_PATH || 'public'
+)
+
 app.register(fastifyStatic, {
-  root: path.join(__dirname, 'public'),
+  root: assetsAbsolutePath,
   prefix: '/',
 })
 
@@ -222,6 +227,11 @@ app.delete<{
 })
 
 app.get('/api/me', (req, res) => {
+  if (!req.user) {
+    res.status(401).send({error: 'unauthenticated'})
+    return
+  }
+
   res.send(req.user)
 })
 
@@ -258,6 +268,7 @@ app.post<{
       httpOnly: true,
       secure: true,
       maxAge: 3600 * 20,
+      // domain: request.headers.referer,
     })
     .send({success: true})
 

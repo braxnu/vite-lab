@@ -1,64 +1,128 @@
 import React, { useEffect, useState } from 'react'
 import {
   Autocomplete,
+  Button,
   Chip,
   Grid,
   TextField,
+  Typography,
 } from '@mui/material'
 import { Examination, ExamMap, Test, TestMap } from '../../shared/types'
 import { ExamResult } from './comp/exam-result'
 import { ContentContainer } from './comp/content-container'
 import { getJSON } from './utils'
+import CheckCircle from '@mui/icons-material/CheckCircle'
 
 export function Search() {
+  const [examMap, setExamMap] = useState<ExamMap>({})
   const [examList, setExamList] = useState<Examination[]>([])
   const [allExistingTestList, setAllExistingTestList] = useState<Test[]>([])
   const [selectedTestList, setSelectedTestList] = useState<Test[]>([])
   const [inputValue, setInputValue] = useState<string>('')
   const [searchValue, setSearchValue] = useState<Test | null>(null)
+  const [selectedExams, setSelectedExams] = useState<Record<Examination['id'], boolean>>({})
 
   useEffect(() => {
     getJSON<ExamMap>('/api/exams')
-      .then(l => setExamList(Object.values(l)))
+      .then(m => {
+        setExamMap(m)
+        setExamList(Object.values(m))
+      })
 
     getJSON<TestMap>('/api/tests')
       .then(l => setAllExistingTestList(Object.values(l)))
   }, [])
 
+  const visibleExamList = examList
+    .filter(e => selectedTestList.some(t => e.testList.includes(t.id)))
+    .sort((a, b) => a.price - b.price)
+    .sort((a, b) => {
+      const aCount = selectedTestList.filter(t => a.testList.includes(t.id)).length
+      const bCount = selectedTestList.filter(t => b.testList.includes(t.id)).length
+
+      return bCount - aCount
+    })
+
+  const totalPrice = visibleExamList
+    .filter(ve => selectedExams[ve.id])
+    .reduce((acc, e) => acc + e.price, 0)
+
+  const allTestsFromSelectedExamsMap: Record<Test['id'], true> = Object.entries(selectedExams)
+    .filter(([k, v]) => v)
+    .map(([seid]) => examMap[seid].testList)
+    .flat()
+    .reduce((acc, tid) => {
+      acc[tid] = true
+      return acc
+    }, {} as Record<Test['id'], true>)
+
   return (
     <ContentContainer>
-      {/* Search field */}
+      {/* Search row */}
       <Grid item>
-        <Autocomplete
-          disablePortal
-          id="test-search-field"
-          options={allExistingTestList
-            .filter(et => !selectedTestList.some(st => st.id === et.id))
-          }
-          value={searchValue}
-          inputValue={inputValue}
-          onInputChange={(ev, val) => {
-            setInputValue(val)
-          }}
+        <Grid container
           sx={{
-            margin: 0,
+            alignItems: 'center',
+            gap: 1,
           }}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Test name search"
-            />
-          )}
-          onChange={(ev, v, r, d) => {
-            if (!v) {
-              return
-            }
+        >
+          <Grid item
+            sx={{
+              flexGrow: 1,
+            }}
+          >
+            <Autocomplete
+              disablePortal
+              id="test-search-field"
+              options={allExistingTestList
+                .filter(et => !selectedTestList.some(st => st.id === et.id))
+              }
+              value={searchValue}
+              inputValue={inputValue}
+              onInputChange={(ev, val) => {
+                setInputValue(val)
+              }}
+              sx={{
+                margin: 0,
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Test name search"
+                />
+              )}
+              onChange={(ev, v, r, d) => {
+                if (!v) {
+                  return
+                }
 
-            setSelectedTestList([...selectedTestList, v])
-            setInputValue('')
-            setSearchValue(null)
-          }}
-        />
+                setSelectedTestList([...selectedTestList, v])
+                setInputValue('')
+                setSearchValue(null)
+              }}
+            />
+          </Grid>
+
+          <Grid item>
+            <Typography variant='h6'>
+              Total: {totalPrice.toFixed(2)}
+            </Typography>
+          </Grid>
+
+          <Grid item>
+            <Button
+              variant='contained'
+              onClick={() => {
+                setSelectedTestList([])
+                setSearchValue(null)
+                setInputValue('')
+                setSelectedExams({})
+              }}
+            >
+              Reset
+            </Button>
+          </Grid>
+        </Grid>
       </Grid>
 
       {/* Selected test chips */}
@@ -69,34 +133,44 @@ export function Search() {
           gap: '4px',
         }}
       >
-        {selectedTestList.map(t => (
-          <Chip
-            key={t.id}
-            label={t.label}
-            onDelete={() => {
-              setSelectedTestList(selectedTestList.filter(({id}) => id !== t.id))
-            }}
-          />
-        ))}
+        {selectedTestList.map(t => {
+          let icon
+
+          if (allTestsFromSelectedExamsMap[t.id]) {
+            icon = (
+              <CheckCircle color='success' />
+            )
+          }
+
+          return (
+            <Chip
+              key={t.id}
+              label={t.label}
+              onDelete={() => {
+                setSelectedTestList(selectedTestList.filter(({id}) => id !== t.id))
+              }}
+              icon={icon}
+            />
+          )})
+        }
       </Grid>
 
       {/* Found exam list */}
       <Grid item>
         <Grid container direction="column" gap={1}>
-          {examList
-            .filter(e => selectedTestList.some(t => e.testList.includes(t.id)))
-            .sort((a, b) => a.price - b.price)
-            .sort((a, b) => {
-              const aCount = selectedTestList.filter(t => a.testList.includes(t.id)).length
-              const bCount = selectedTestList.filter(t => b.testList.includes(t.id)).length
-
-              return bCount - aCount
-            })
+          {visibleExamList
             .map(e => (
-              <Grid item>
+              <Grid item key={e.id}>
                 <ExamResult
                   e={e}
                   selectedTestList={selectedTestList}
+                  isSelected={Boolean(selectedExams[e.id])}
+                  setSelected={v => {
+                    setSelectedExams({
+                      ...selectedExams,
+                      [e.id]: v,
+                    })
+                  }}
                 />
               </Grid>
             ))}

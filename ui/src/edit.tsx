@@ -3,11 +3,12 @@ import {
   Grid,
   Typography,
 } from '@mui/material'
-import { ExamMap, TestMap } from '../../shared/types'
+import { ExamMap, Test, TestMap } from '../../shared/types'
 import { ContentContainer } from './comp/content-container'
 import { ExamEditor } from './comp/exam-editor'
 import { getJSON } from './utils'
 import { TestEditor } from './comp/test-editor'
+import { byField } from '../../shared/utils'
 
 export function Edit() {
   const [examMap, setExamMap] = useState<ExamMap>({})
@@ -21,6 +22,8 @@ export function Edit() {
   useEffect(updateData, [])
 
   const allAvailableTestList = Object.values(allExistingTestMap)
+    .sort(byField('label'))
+
   const examList = Object.values(examMap)
 
   return (
@@ -54,15 +57,17 @@ export function Edit() {
             />
           </Grid>
 
-          {Object.values(allExistingTestMap).map(t => (
-            <Grid item key={t.id}>
-              <TestEditor
-                t={t}
-                onDataUpdated={updateData}
-                examList={examList}
-                />
-            </Grid>
-          ))}
+          {allAvailableTestList
+            .map(t => (
+              <Grid item key={t.id}>
+                <TestEditor
+                  t={t}
+                  onDataUpdated={updateData}
+                  examList={examList}
+                  />
+              </Grid>
+            ))
+          }
         </ContentContainer>
       </Grid>
 

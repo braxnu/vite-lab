@@ -35,8 +35,8 @@ export const byId = <T extends {id: string}>(a: T, b: T): number => {
 }
 
 export const byField =
-  (field: string) =>
-    (a: any, b: any): number => {
+  <T>(field: keyof T) =>
+    (a: T, b: T): number => {
       if (a[field] === b[field]) return 0
 
       return a[field] < b[field] ? -1 : 1

@@ -1,18 +1,27 @@
 import React from 'react'
-import { Grid, Paper, Typography } from '@mui/material'
+import { Checkbox, FormControlLabel, Grid, Paper, Typography } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import { Examination, Test } from '../../../shared/types'
 
 export const ExamResult: React.FC<{
   e: Examination,
   selectedTestList: Test[],
+  isSelected: boolean,
+  setSelected: (v: boolean) => void,
 }> = ({
   e,
   selectedTestList,
+  isSelected,
+  setSelected,
 }) => (
   <Paper sx={{padding: 1}}>
     <Grid container direction="column">
-      <Grid container>
+      <Grid container
+        sx={{
+          alignItems: 'center',
+          gap: 1,
+        }}
+      >
         <Grid item
           sx={{
             flexGrow: 1,
@@ -36,6 +45,21 @@ export const ExamResult: React.FC<{
           >
             {e.price.toFixed(2)}
           </Typography>
+        </Grid>
+
+        <Grid item
+          sx={{
+            justifySelf: 'end',
+          }}
+        >
+          <FormControlLabel control={
+            <Checkbox
+              checked={isSelected}
+              onChange={ev => {
+                setSelected(ev.target.checked)
+              }}
+            />
+          } label="Selected" />
         </Grid>
       </Grid>
 
