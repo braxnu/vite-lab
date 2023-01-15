@@ -92,7 +92,7 @@ export const TestEditor: React.FC<{
                   label,
                 }
 
-                await postJSON('/api/exams', payload)
+                await postJSON('/api/tests', payload)
                 setLabel('')
                 onDataUpdated()
               }}
