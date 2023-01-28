@@ -13,5 +13,4 @@ docker build -t medyk-lab .
 #   --name medyk-lab \
 #   medyk-lab
 
-#   # -e='GOOGLE_AUTH_CLIENT_ID=' \
 #   # -ti \
