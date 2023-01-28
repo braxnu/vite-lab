@@ -56,3 +56,4 @@ yarn-error.log*
 service/data.json
 data.json
 users.json
+/release.sh

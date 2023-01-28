@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react'
 import {
   Autocomplete,
   Button,
+  Checkbox,
   Chip,
+  FormControlLabel,
   Grid,
   TextField,
   Typography,
@@ -17,10 +19,12 @@ export function Search() {
   const [examMap, setExamMap] = useState<ExamMap>({})
   const [examList, setExamList] = useState<Examination[]>([])
   const [allExistingTestList, setAllExistingTestList] = useState<Test[]>([])
+  const [allExistingTestMap, setAllExistingTestMap] = useState<TestMap>({})
   const [selectedTestList, setSelectedTestList] = useState<Test[]>([])
   const [inputValue, setInputValue] = useState<string>('')
   const [searchValue, setSearchValue] = useState<Test | null>(null)
   const [selectedExams, setSelectedExams] = useState<Record<Examination['id'], boolean>>({})
+  const [isSummaryView, setSummaryView] = useState<boolean>(false)
 
   useEffect(() => {
     getJSON<ExamMap>('/api/exams')
@@ -30,11 +34,15 @@ export function Search() {
       })
 
     getJSON<TestMap>('/api/tests')
-      .then(l => setAllExistingTestList(Object.values(l)))
+      .then(m => {
+        setAllExistingTestMap(m)
+        setAllExistingTestList(Object.values(m))
+      })
   }, [])
 
   const visibleExamList = examList
     .filter(e => selectedTestList.some(t => e.testList.includes(t.id)))
+    .filter(e => !isSummaryView || selectedExams[e.id])
     .sort((a, b) => a.price - b.price)
     .sort((a, b) => {
       const aCount = selectedTestList.filter(t => a.testList.includes(t.id)).length
@@ -126,33 +134,65 @@ export function Search() {
       </Grid>
 
       {/* Selected test chips */}
-      <Grid item
+      <Grid item container
         sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '4px',
+          // backgroundColor: 'yellow',
+          flexWrap: 'nowrap',
         }}
       >
-        {selectedTestList.map(t => {
-          let icon
+        <Grid item container
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '4px',
+            flexBasis: '100%',
+            // backgroundColor: 'green',
+          }}
+        >
+          {selectedTestList.map(t => {
+            let icon
 
-          if (allTestsFromSelectedExamsMap[t.id]) {
-            icon = (
-              <CheckCircle color='success' />
-            )
+            if (allTestsFromSelectedExamsMap[t.id]) {
+              icon = (
+                <CheckCircle color='success' />
+              )
+            }
+
+            return (
+              <Chip
+                key={t.id}
+                label={t.label}
+                onDelete={() => {
+                  setSelectedTestList(selectedTestList.filter(({id}) => id !== t.id))
+                }}
+                icon={icon}
+              />
+            )})
           }
+        </Grid>
 
-          return (
-            <Chip
-              key={t.id}
-              label={t.label}
-              onDelete={() => {
-                setSelectedTestList(selectedTestList.filter(({id}) => id !== t.id))
-              }}
-              icon={icon}
-            />
-          )})
-        }
+        <Grid item
+          sx={{
+            // flexBasis: 1,
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={isSummaryView}
+                onChange={ev => {
+                  setSummaryView(ev.target.checked)
+                }}
+              />
+            }
+            sx={{
+              userSelect: 'none',
+              marginRight: 1,
+            }}
+            label="Summary view"
+          />
+        </Grid>
       </Grid>
 
       {/* Found exam list */}
@@ -164,6 +204,7 @@ export function Search() {
                 <ExamResult
                   e={e}
                   selectedTestList={selectedTestList}
+                  allExistingTestMap={allExistingTestMap}
                   isSelected={Boolean(selectedExams[e.id])}
                   setSelected={v => {
                     setSelectedExams({

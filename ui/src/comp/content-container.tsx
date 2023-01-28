@@ -8,7 +8,10 @@ export const ContentContainer: React.FC<{
   ...rest
 }) => {
   const isMobile = useMediaQuery('(max-width: 600px)')
-  const columnWidth = isMobile ? '90vw' : '50vw'
+  const isSmallDesktop = useMediaQuery('(max-width: 1000px)')
+
+  const columnWidth = isMobile ? '90vw' :
+    isSmallDesktop ? '600px' : '900px'
 
   return (
     <Grid container

@@ -1,4 +1,4 @@
-import Fastify from 'fastify'
+import Fastify, { preHandlerHookHandler } from 'fastify'
 import { Examination, ExamMap, Test, TestMap, User } from '../../shared/types'
 import jsonfile from 'jsonfile'
 import fastifyCookie from '@fastify/cookie'
@@ -14,16 +14,14 @@ import { fileURLToPath } from 'url'
 
 const port = Number(process.env.PORT) || 3000
 const jwtSecret = process.env.JWT_SECRET
-
-if (!jwtSecret) {
-  throw new Error('Missing env JWT_SECRET')
-}
-
 const client_id = process.env.GOOGLE_AUTH_CLIENT_ID
 
-// if (!client_id) {
-//   throw new Error('Missing env GOOGLE_AUTH_CLIENT_ID')
-// }
+if (process.env.NODE_ENV !== 'development') {
+  if (!jwtSecret) {
+    throw new Error('Missing env JWT_SECRET')
+  }
+}
+
 
 let allowedUsers: User[] = []
 
@@ -42,7 +40,7 @@ declare module 'fastify' {
 const oauthClient = new OAuth2Client(client_id)
 
 const app = Fastify({
-  logger: true,
+  logger: false,
 })
 
 let exams: ExamMap
@@ -84,21 +82,34 @@ const publicURLs = [
   '/callback',
 ]
 
+const devUser: User = {
+  password: '',
+  email: 'dev@dev',
+  isAdmin: true,
+}
+
+const authPreHandler: preHandlerHookHandler = jwtSecret
+  ? (req, rep, done) => {
+    jwt.verify(req.cookies.token as string, jwtSecret, (err, user) => {
+      req.user = user as JwtPayload
+
+      if (publicURLs.some(pu => req.url.startsWith(pu))) {
+        done()
+        return
+      }
+
+      done(err as Error)
+    })
+  }
+  : (req, rep, done) => {
+    req.user = devUser
+    done()
+  }
+
 app.register(fastifyAuth)
   .after(() => {
     app.addHook('preHandler', app.auth([
-      (req, rep, done) => {
-        jwt.verify(req.cookies.token as string, jwtSecret, (err, user) => {
-          req.user = user as JwtPayload
-
-          if (publicURLs.some(pu => req.url.startsWith(pu))) {
-            done()
-            return
-          }
-
-          done(err as Error)
-        })
-      }
+      authPreHandler,
     ]))
   })
 
