@@ -3,7 +3,7 @@ import {
   Grid,
   Typography,
 } from '@mui/material'
-import { ExamMap, Test, TestMap } from '../../shared/types'
+import { ExamMap, TestMap } from '../../shared/types'
 import { ContentContainer } from './comp/content-container'
 import { ExamEditor } from './comp/exam-editor'
 import { getJSON } from './utils'
@@ -64,7 +64,7 @@ export function Edit() {
                   t={t}
                   onDataUpdated={updateData}
                   examList={examList}
-                  />
+                />
               </Grid>
             ))
           }

@@ -132,7 +132,7 @@ app.post<{
         error: 'entity exists',
       })
 
-      return
+    return
   }
 
   exams[id] = {
@@ -159,7 +159,7 @@ app.put<{
         error: 'entity not found',
       })
 
-      return
+    return
   }
 
   exams[id] = {
@@ -200,7 +200,7 @@ app.post<{
         error: 'entity exists',
       })
 
-      return
+    return
   }
 
   tests[id] = {
@@ -230,7 +230,7 @@ app.delete<{
         error: 'entity in use',
       })
 
-      return
+    return
   }
 
   delete exams[id]
@@ -272,7 +272,7 @@ app.post<{
   const token = jwt.sign({
     email: user.email,
     isAdmin: user.isAdmin,
-  }, jwtSecret)
+  }, jwtSecret as string)
 
   reply
     .setCookie('token', token, {
@@ -303,11 +303,11 @@ app.post<{
   const ticket = await oauthClient.verifyIdToken({
     idToken: request.body.credential as string,
     audience: client_id,
-  });
+  })
 
-  const payload = ticket.getPayload();
-  const email = payload?.email;
-  const token = jwt.sign({email}, jwtSecret)
+  const payload = ticket.getPayload()
+  const email = payload?.email
+  const token = jwt.sign({email}, jwtSecret as string)
 
   reply
     .setCookie('token', token, {

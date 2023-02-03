@@ -24,7 +24,7 @@ export function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [currentTab, setCurrentTab] = useState<Tabs>(Tabs.Search)
-  const isSmallScreen = useMediaQuery('(max-width: 600px)');
+  const isSmallScreen = useMediaQuery('(max-width: 600px)')
 
   useEffect(() => {
     getJSON<User>('/api/me')
@@ -44,112 +44,117 @@ export function App() {
     )
   }
 
-  return user
-    ? (
-      <>
-        <AppBar position="sticky">
-          <Toolbar
+  return (
+    <>
+      <AppBar position="sticky">
+        <Toolbar
+          sx={{
+            gap: '5px',
+            flexWrap: isSmallScreen ? 'wrap' : 'nowrap',
+          }}
+        >
+          <Typography
+            variant={isSmallScreen ? 'h6' : 'h4'}
             sx={{
-              gap: '5px',
-              flexWrap: isSmallScreen ? 'wrap' : 'nowrap',
+              marginRight: '10px',
             }}
           >
-            <Typography
-              variant={isSmallScreen ? 'h6' : 'h4'}
-              sx={{
-                marginRight: '10px',
-              }}
-            >
-              Medyk Lab
-            </Typography>
+            Medyk Lab
+          </Typography>
 
-            {/* Top menu */}
-            {user?.isAdmin && (
+          {/* Top menu */}
+          <Button
+            variant='text'
+            color='inherit'
+            onClick={() => {
+              setCurrentTab(Tabs.Search)
+            }}
+          >
+            Search
+          </Button>
+
+          <Button
+            variant='text'
+            color='inherit'
+            onClick={() => {
+              setCurrentTab(Tabs.Edit)
+            }}
+          >
+            Edit
+          </Button>
+
+          {user
+            ? (
               <>
-                <Button
-                  variant='text'
-                  color='inherit'
-                  onClick={() => {
-                    setCurrentTab(Tabs.Search)
+                <Typography
+                  variant='caption'
+                  sx={{
+                    flexGrow: 1,
+                    textTransform: 'uppercase',
+                    textAlign: 'right',
                   }}
                 >
-                  Search
-                </Button>
+                  {user.email}
+                </Typography>
 
                 <Button
                   variant='text'
                   color='inherit'
                   onClick={() => {
-                    setCurrentTab(Tabs.Edit)
+                    location.assign('/logout')
                   }}
                 >
-                  Edit
+                  Logout
                 </Button>
               </>
-            )}
+            )
+            : null
+          }
+        </Toolbar>
+      </AppBar>
 
-            <Typography
-              variant='caption'
-              sx={{
-                flexGrow: 1,
-                textTransform: 'uppercase',
-                textAlign: 'right',
-              }}
-            >
-              {user.email}
-            </Typography>
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        marginTop: '15px',
+      }}>
+        {(currentTab === Tabs.Search) && (
+          <Search />
+        )}
+        {(currentTab === Tabs.Edit) && (
+          user?.isAdmin
+            ? (
+              <Edit />
+            )
+            : (
+              <FormControl
+                sx={{
+                  flexDirection: 'column',
+                  display: 'flex',
+                  alignContent: 'center',
+                  flexWrap: 'wrap',
+                  height: '90vh',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}
+              >
+                {/* <GoogleLogin
+                  ux_mode="redirect"
+                  login_uri="https://medyk-lab.braxnu.com/callback"
+                  onSuccess={response => {
+                    console.log({response})
+                  }}
+                  onError={() => {
+                    console.log('Login Failed');
+                  }}
+                /> */}
 
-            <Button
-              variant='text'
-              color='inherit'
-              onClick={() => {
-                location.assign('/logout')
-              }}
-            >
-              Logout
-            </Button>
-          </Toolbar>
-        </AppBar>
-
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginTop: '15px',
-        }}>
-          {(currentTab === Tabs.Search) && (
-            <Search />
-          )}
-          {(currentTab === Tabs.Edit) && (
-            <Edit />
-          )}
-        </Box>
-      </>
-    )
-    : (
-      <FormControl
-        sx={{
-          flexDirection: 'column',
-          display: 'flex',
-          alignContent: 'center',
-          flexWrap: 'wrap',
-          height: '90vh',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '10px',
-        }}
-      >
-        {/* <GoogleLogin
-          ux_mode="redirect"
-          login_uri="https://medyk-lab.braxnu.com/callback"
-          onSuccess={response => {
-            console.log({response})
-          }}
-          onError={() => {
-            console.log('Login Failed');
-          }}
-        /> */}
-
-        <LoginForm />
-      </FormControl>
-    )
+                <LoginForm />
+              </FormControl>
+            )
+        )}
+      </Box>
+    </>
+  )
 }

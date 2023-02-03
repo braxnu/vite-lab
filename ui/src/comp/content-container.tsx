@@ -1,5 +1,5 @@
-import React from 'react';
-import { Grid, useMediaQuery } from '@mui/material';
+import React from 'react'
+import { Grid, useMediaQuery } from '@mui/material'
 
 export const ContentContainer: React.FC<{
   children: React.ReactNode,
