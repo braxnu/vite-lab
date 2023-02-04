@@ -1,4 +1,4 @@
-import Fastify, { preHandlerHookHandler } from 'fastify'
+import Fastify, { FastifyRequest, preHandlerHookHandler } from 'fastify'
 import { Examination, ExamMap, Test, TestMap, User } from '../../shared/types'
 import jsonfile from 'jsonfile'
 import fastifyCookie from '@fastify/cookie'
@@ -76,11 +76,19 @@ app.register(fastifyStatic, {
 app.register(fastifyCookie)
 app.register(fastifyFormBody)
 
-const publicURLs = [
-  '/',
-  '/auth',
-  '/callback',
-]
+const publicURLs: Record<FastifyRequest['method'], string[]> = {
+  GET: [
+    '/',
+    '/logout',
+    '/api/me',
+    '/api/exams',
+    '/api/tests',
+  ],
+  POST: [
+    '/auth',
+    '/callback',
+  ],
+}
 
 const devUser: User = {
   password: '',
@@ -93,7 +101,9 @@ const authPreHandler: preHandlerHookHandler = jwtSecret
     jwt.verify(req.cookies.token as string, jwtSecret, (err, user) => {
       req.user = user as JwtPayload
 
-      if (publicURLs.some(pu => req.url.startsWith(pu))) {
+      const publicList = publicURLs[req.method]
+
+      if (publicList.some(pu => req.url.startsWith(pu))) {
         done()
         return
       }
