@@ -54,6 +54,9 @@ typings/
 yarn-debug.log*
 yarn-error.log*
 service/data.json
-data.json
+data*.json
 users.json
 up.sh
+single.tsv
+confirm.tsv
+confirm.xlsx
