@@ -14,13 +14,16 @@ import { ExamResult } from './comp/exam-result'
 import { ContentContainer } from './comp/content-container'
 import { getJSON } from './utils'
 import CheckCircle from '@mui/icons-material/CheckCircle'
+import ArticleIcon from '@mui/icons-material/Article'
+import { isExam, isTest } from '../../shared/utils'
 
 export function Search() {
-  const [examMap, setExamMap] = useState<ExamMap>({})
-  const [examList, setExamList] = useState<Examination[]>([])
+  const [allExistingExamMap, setExamMap] = useState<ExamMap>({})
+  const [allExistingExamList, setExamList] = useState<Examination[]>([])
   const [allExistingTestList, setAllExistingTestList] = useState<Test[]>([])
   const [allExistingTestMap, setAllExistingTestMap] = useState<TestMap>({})
-  const [selectedTestList, setSelectedTestList] = useState<Test[]>([])
+  const [requiredExamList, setRequiredExamList] = useState<Examination[]>([])
+  const [requiredTestList, setRequiredTestList] = useState<Test[]>([])
   const [inputValue, setInputValue] = useState<string>('')
   const [searchValue, setSearchValue] = useState<Test | null>(null)
   const [selectedExams, setSelectedExams] = useState<Record<Examination['id'], boolean>>({})
@@ -40,13 +43,16 @@ export function Search() {
       })
   }, [])
 
-  const visibleExamList = examList
-    .filter(e => selectedTestList.some(t => e.testList.includes(t.id)))
+  const visibleExamList = allExistingExamList
+    .filter(e =>
+      requiredTestList.some(t => e.testList.includes(t.id)) ||
+      requiredExamList.some(re => re.id === e.id)
+    )
     .filter(e => !isSummaryView || selectedExams[e.id])
     .sort((a, b) => a.price - b.price)
     .sort((a, b) => {
-      const aCount = selectedTestList.filter(t => a.testList.includes(t.id)).length
-      const bCount = selectedTestList.filter(t => b.testList.includes(t.id)).length
+      const aCount = requiredTestList.filter(t => a.testList.includes(t.id)).length
+      const bCount = requiredTestList.filter(t => b.testList.includes(t.id)).length
 
       return bCount - aCount
     })
@@ -57,12 +63,23 @@ export function Search() {
 
   const allTestsFromSelectedExamsMap: Record<Test['id'], true> = Object.entries(selectedExams)
     .filter(([k, v]) => v)
-    .map(([seid]) => examMap[seid].testList)
+    .map(([seid]) => allExistingExamMap[seid].testList)
     .flat()
     .reduce((acc, tid) => {
       acc[tid] = true
       return acc
     }, {} as Record<Test['id'], true>)
+
+  const autocompleteOptions = [
+    ...allExistingTestList
+      .filter(et => !requiredTestList.some(st => st.id === et.id)),
+    ...allExistingExamList
+      .filter(ee => !requiredExamList.some(se => se.id === ee.id))
+      .map(ee => ({
+        ...ee,
+        label: '[EXAM] ' + ee.name,
+      })),
+  ]
 
   return (
     <ContentContainer>
@@ -82,9 +99,7 @@ export function Search() {
             <Autocomplete
               disablePortal
               id="test-search-field"
-              options={allExistingTestList
-                .filter(et => !selectedTestList.some(st => st.id === et.id))
-              }
+              options={autocompleteOptions}
               value={searchValue}
               inputValue={inputValue}
               onInputChange={(ev, val) => {
@@ -104,7 +119,18 @@ export function Search() {
                   return
                 }
 
-                setSelectedTestList([...selectedTestList, v])
+                if (isTest(v)) {
+                  setRequiredTestList([...requiredTestList, v])
+                } else if (isExam(v)) {
+                  setRequiredExamList([...requiredExamList, v])
+
+                  setSelectedExams({
+                    ...selectedExams,
+                    // @ts-ignore
+                    [v.id]: true,
+                  })
+                }
+
                 setInputValue('')
                 setSearchValue(null)
               }}
@@ -121,7 +147,8 @@ export function Search() {
             <Button
               variant='contained'
               onClick={() => {
-                setSelectedTestList([])
+                setRequiredTestList([])
+                setRequiredExamList([])
                 setSearchValue(null)
                 setInputValue('')
                 setSelectedExams({})
@@ -149,10 +176,14 @@ export function Search() {
             // backgroundColor: 'green',
           }}
         >
-          {selectedTestList.map(t => {
+          {[...requiredTestList, ...requiredExamList].map(t => {
             let icon
 
-            if (allTestsFromSelectedExamsMap[t.id]) {
+            if (isExam(t)) {
+              icon = (
+                <ArticleIcon />
+              )
+            } else if (allTestsFromSelectedExamsMap[t.id]) {
               icon = (
                 <CheckCircle color='success' />
               )
@@ -161,9 +192,13 @@ export function Search() {
             return (
               <Chip
                 key={t.id}
-                label={t.label}
+                label={(t as Test).label || (t as Examination).name}
                 onDelete={() => {
-                  setSelectedTestList(selectedTestList.filter(({id}) => id !== t.id))
+                  if (isTest(t)) {
+                    setRequiredTestList(requiredTestList.filter(({id}) => id !== t.id))
+                  } else {
+                    setRequiredExamList(requiredExamList.filter(({id}) => id !== t.id))
+                  }
                 }}
                 icon={icon}
               />
@@ -203,7 +238,8 @@ export function Search() {
               <Grid item key={e.id}>
                 <ExamResult
                   e={e}
-                  selectedTestList={selectedTestList}
+                  allTestsFromSelectedExamsMap={allTestsFromSelectedExamsMap}
+                  requiredTestList={requiredTestList}
                   allExistingTestMap={allExistingTestMap}
                   isSelected={Boolean(selectedExams[e.id])}
                   setSelected={v => {

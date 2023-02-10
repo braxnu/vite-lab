@@ -2,6 +2,7 @@ import React from 'react'
 import { Checkbox, FormControlLabel, Grid, Paper, Typography } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import AddCircleIcon from '@mui/icons-material/AddCircle'
+import HelpIcon from '@mui/icons-material/Help'
 import { Examination, Test, TestMap } from '../../../shared/types'
 
 const selectedTestIcon = (
@@ -22,27 +23,42 @@ const addCircleIcon = (
   />
 )
 
+const testRequiredIcon = (
+  <HelpIcon
+    sx={{
+      color: '#d9381c',
+      fontSize: '18px',
+    }}
+  />
+)
+
 export const ExamResult: React.FC<{
   e: Examination,
-  selectedTestList: Test[],
+  requiredTestList: Test[],
   allExistingTestMap: TestMap,
   isSelected: boolean,
   setSelected: (v: boolean) => void,
+  allTestsFromSelectedExamsMap: Record<Test['id'], true>,
 }> = ({
   e,
-  selectedTestList,
+  requiredTestList,
   allExistingTestMap,
   isSelected,
   setSelected,
+  allTestsFromSelectedExamsMap,
 }) => {
-  const isTestSelected = (t: Test): boolean =>
-    Boolean(selectedTestList.find(sel => sel.id === t.id))
+  const isTestRequired = (t: Test): boolean =>
+    Boolean(requiredTestList.find(sel => sel.id === t.id))
+
+  const isTestCovered = (t: Test): boolean =>
+    isTestRequired(t) &&
+    Boolean(allTestsFromSelectedExamsMap[t.id])
 
   const testsInThisExam: Test[] = e.testList
     .map(id => allExistingTestMap[id])
     .sort((a, b) => {
-      const A: number = isTestSelected(a) ? 1 : -1
-      const B: number = isTestSelected(b) ? 1 : -1
+      const A: number = isTestRequired(a) ? 1 : -1
+      const B: number = isTestRequired(b) ? 1 : -1
 
       return B - A
     })
@@ -117,7 +133,12 @@ export const ExamResult: React.FC<{
                   alignItems: 'center',
                 }}
               >
-                {isTestSelected(t) ? selectedTestIcon : addCircleIcon}
+                {isTestCovered(t)
+                  ? selectedTestIcon
+                  : isTestRequired(t)
+                    ? testRequiredIcon
+                    : addCircleIcon
+                }
                 {t.label}
               </Typography>
             ))

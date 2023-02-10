@@ -103,7 +103,7 @@ const authPreHandler: preHandlerHookHandler = jwtSecret
 
       const publicList = publicURLs[req.method]
 
-      if (publicList.some(pu => req.url.startsWith(pu))) {
+      if (publicList?.some(pu => req.url.startsWith(pu))) {
         done()
         return
       }
@@ -243,7 +243,7 @@ app.delete<{
     return
   }
 
-  delete exams[id]
+  delete tests[id]
   res.send({})
 })
 

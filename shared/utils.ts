@@ -1,3 +1,5 @@
+import { Examination, Test } from './types'
+
 const pairs = [
   'ąa',
   'ęe',
@@ -41,3 +43,6 @@ export const byField =
 
       return a[field] < b[field] ? -1 : 1
     }
+
+export const isTest = (v: any): v is Test => !v?.testList
+export const isExam = (v: any): v is Examination => Boolean(v?.testList)
