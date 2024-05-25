@@ -1,4 +1,4 @@
-FROM node:19-alpine
+FROM node:20-alpine
 
 WORKDIR /opt
 EXPOSE 3000
